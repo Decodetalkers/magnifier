@@ -10,3 +10,6 @@ iced_futures = "0.14.0"
 iced_renderer = "0.14.0"
 iced_runtime = "0.14.0"
 log = "0.4.29"
+
+[dev-dependencies]
+iced = { version = "0.14", features = ["tokio", "image"]  }

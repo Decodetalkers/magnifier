@@ -1,5 +1,5 @@
-use iced_core::image;
 use iced_core::border;
+use iced_core::image;
 use iced_core::layout;
 use iced_core::mouse;
 use iced_core::renderer;
@@ -279,7 +279,15 @@ pub fn draw<Renderer, Handle>(
     let bounds = layout.bounds();
     let drawing_bounds =
         drawing_bounds(renderer, bounds, handle, crop, content_fit, rotation, scale);
-
+    renderer.with_layer(bounds, |renderer| {
+        renderer.fill_quad(
+            renderer::Quad {
+                bounds,
+                ..Default::default()
+            },
+            iced_core::color!(0x777777, 0.5),
+        )
+    });
     renderer.draw_image(
         image::Image {
             handle: handle.clone(),
@@ -287,7 +295,7 @@ pub fn draw<Renderer, Handle>(
             filter_method,
             rotation: rotation.radians(),
             opacity,
-            snap: false
+            snap: false,
         },
         drawing_bounds,
         bounds,

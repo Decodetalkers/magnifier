@@ -24,6 +24,7 @@ pub struct Magnifier<Handle = image::Handle> {
     scale: f32,
     expand: bool,
     magnifier_area: Size,
+    drawing_bounds_image: Rectangle,
 }
 
 impl<Handle> Magnifier<Handle> {
@@ -45,6 +46,7 @@ impl<Handle> Magnifier<Handle> {
                 width: 100.,
                 height: 100.,
             },
+            drawing_bounds_image: Rectangle::default(),
         }
     }
 
@@ -310,74 +312,6 @@ fn crop(size: Size<u32>, region: Option<Rectangle<u32>>) -> Size<f32> {
     }
 }
 
-/// Draws an [`Magnifier`]
-pub fn draw<Renderer, Handle>(
-    renderer: &mut Renderer,
-    layout: Layout<'_>,
-    handle: &Handle,
-    crop: Option<Rectangle<u32>>,
-    border_radius: border::Radius,
-    content_fit: ContentFit,
-    filter_method: FilterMethod,
-    rotation: Rotation,
-
-    opacity: f32,
-    scale: f32,
-    magnifier_area: Size,
-    cursor_point: Option<Point>,
-) where
-    Renderer: image::Renderer<Handle = Handle>,
-    Handle: Clone,
-{
-    let bounds = layout.bounds();
-    let drawing_bounds_bottom =
-        drawing_bounds(renderer, bounds, handle, crop, content_fit, rotation);
-
-    renderer.with_layer(bounds, |renderer| {
-        renderer.fill_quad(
-            renderer::Quad {
-                bounds,
-                ..Default::default()
-            },
-            iced_core::color!(0x777777, 0.5),
-        )
-    });
-
-    if let Some(point) = cursor_point
-        && drawing_bounds_bottom.contains(point)
-    {
-        let (clip_bounds, magnifier_bounds) =
-            crop_bounds(drawing_bounds_bottom, point, scale, magnifier_area);
-        renderer.with_layer(drawing_bounds_bottom, |renderer| {
-            renderer.draw_image(
-                image::Image {
-                    handle: handle.clone(),
-                    border_radius,
-                    filter_method,
-                    rotation: rotation.radians(),
-                    opacity,
-                    snap: false,
-                },
-                magnifier_bounds,
-                clip_bounds,
-            )
-        });
-    }
-
-    renderer.draw_image(
-        image::Image {
-            handle: handle.clone(),
-            border_radius,
-            filter_method,
-            rotation: rotation.radians(),
-            opacity,
-            snap: false,
-        },
-        drawing_bounds_bottom,
-        bounds,
-    );
-}
-
 impl<Message, Theme, Renderer, Handle> Widget<Message, Theme, Renderer> for Magnifier<Handle>
 where
     Renderer: image::Renderer<Handle = Handle>,
@@ -413,13 +347,21 @@ where
         &mut self,
         _tree: &mut Tree,
         event: &iced_core::Event,
-        _layout: Layout<'_>,
+        layout: Layout<'_>,
         _cursor: mouse::Cursor,
-        _renderer: &Renderer,
+        renderer: &Renderer,
         _clipboard: &mut dyn iced_core::Clipboard,
         shell: &mut iced_core::Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
+        self.drawing_bounds_image = drawing_bounds(
+            renderer,
+            layout.bounds(),
+            &self.handle,
+            self.crop,
+            self.content_fit,
+            self.rotation,
+        );
         if matches!(
             event,
             iced_core::Event::Mouse(mouse::Event::CursorMoved { .. })
@@ -439,19 +381,55 @@ where
         cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
-        draw(
-            renderer,
-            layout,
-            &self.handle,
-            self.crop,
-            self.border_radius,
-            self.content_fit,
-            self.filter_method,
-            self.rotation,
-            self.opacity,
-            self.scale,
-            self.magnifier_area,
-            cursor.position(),
+        let bounds = layout.bounds();
+        let drawing_bounds_bottom = self.drawing_bounds_image;
+
+        renderer.with_layer(bounds, |renderer| {
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds,
+                    ..Default::default()
+                },
+                iced_core::color!(0x777777, 0.5),
+            )
+        });
+
+        if let Some(point) = cursor.position()
+            && drawing_bounds_bottom.contains(point)
+        {
+            let (clip_bounds, magnifier_bounds) = crop_bounds(
+                drawing_bounds_bottom,
+                point,
+                self.scale,
+                self.magnifier_area,
+            );
+            renderer.with_layer(drawing_bounds_bottom, |renderer| {
+                renderer.draw_image(
+                    image::Image {
+                        handle: self.handle.clone(),
+                        border_radius: self.border_radius,
+                        filter_method: self.filter_method,
+                        rotation: self.rotation.radians(),
+                        opacity: self.opacity,
+                        snap: false,
+                    },
+                    magnifier_bounds,
+                    clip_bounds,
+                )
+            });
+        }
+
+        renderer.draw_image(
+            image::Image {
+                handle: self.handle.clone(),
+                border_radius: self.border_radius,
+                filter_method: self.filter_method,
+                rotation: self.rotation.radians(),
+                opacity: self.opacity,
+                snap: false,
+            },
+            drawing_bounds_bottom,
+            bounds,
         );
     }
 

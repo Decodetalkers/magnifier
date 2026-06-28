@@ -23,6 +23,7 @@ pub struct Magnifier<Handle = image::Handle> {
     opacity: f32,
     scale: f32,
     expand: bool,
+    magnifier_area: Size,
 }
 
 impl<Handle> Magnifier<Handle> {
@@ -38,8 +39,12 @@ impl<Handle> Magnifier<Handle> {
             filter_method: FilterMethod::default(),
             rotation: Rotation::default(),
             opacity: 1.0,
-            scale: 1.0,
+            scale: 2.0,
             expand: false,
+            magnifier_area: Size {
+                width: 100.,
+                height: 100.,
+            },
         }
     }
 
@@ -132,6 +137,11 @@ impl<Handle> Magnifier<Handle> {
         self.border_radius = border_radius.into();
         self
     }
+
+    pub fn magnifier_bounds(mut self, magnifier_area: impl Into<Size>) -> Self {
+        self.magnifier_area = magnifier_area.into();
+        self
+    }
 }
 
 /// Computes the layout of an [`Image`].
@@ -187,7 +197,6 @@ fn drawing_bounds<Renderer, Handle>(
     region: Option<Rectangle<u32>>,
     content_fit: ContentFit,
     rotation: Rotation,
-    scale: f32,
 ) -> Rectangle
 where
     Renderer: image::Renderer<Handle = Handle>,
@@ -202,7 +211,7 @@ where
         adjusted_fit.height / rotated_size.height,
     );
 
-    let final_size = image_size * fit_scale * scale;
+    let final_size = image_size * fit_scale;
 
     let (crop_offset, final_size) = if let Some(region) = region {
         let x = region.x.min(original_size.width) as f32;
@@ -308,16 +317,18 @@ pub fn draw<Renderer, Handle>(
     content_fit: ContentFit,
     filter_method: FilterMethod,
     rotation: Rotation,
-    cursor_point: Option<Point>,
+
     opacity: f32,
     scale: f32,
+    magnifier_area: Size,
+    cursor_point: Option<Point>,
 ) where
     Renderer: image::Renderer<Handle = Handle>,
     Handle: Clone,
 {
     let bounds = layout.bounds();
     let drawing_bounds_bottom =
-        drawing_bounds(renderer, bounds, handle, crop, content_fit, rotation, scale);
+        drawing_bounds(renderer, bounds, handle, crop, content_fit, rotation);
 
     renderer.with_layer(bounds, |renderer| {
         renderer.fill_quad(
@@ -332,15 +343,8 @@ pub fn draw<Renderer, Handle>(
     if let Some(point) = cursor_point
         && drawing_bounds_bottom.contains(point)
     {
-        let (clip_bounds, magnifier_bounds) = crop_bounds(
-            drawing_bounds_bottom,
-            point,
-            4.,
-            Size {
-                width: 100.,
-                height: 100.,
-            },
-        );
+        let (clip_bounds, magnifier_bounds) =
+            crop_bounds(drawing_bounds_bottom, point, scale, magnifier_area);
         renderer.with_layer(drawing_bounds_bottom, |renderer| {
             renderer.draw_image(
                 image::Image {
@@ -441,9 +445,10 @@ where
             self.content_fit,
             self.filter_method,
             self.rotation,
-            cursor.position(),
             self.opacity,
             self.scale,
+            self.magnifier_area,
+            cursor.position(),
         );
     }
 }

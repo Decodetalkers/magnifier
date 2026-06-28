@@ -34,7 +34,7 @@ impl<Handle> Magnifier<Handle> {
             height: Length::Shrink,
             crop: None,
             border_radius: border::Radius::default(),
-            content_fit: ContentFit::default(),
+            content_fit: ContentFit::Cover,
             filter_method: FilterMethod::default(),
             rotation: Rotation::default(),
             opacity: 1.0,
@@ -249,6 +249,44 @@ where
     Rectangle::new(position + crop_offset, final_size)
 }
 
+fn crop_bounds(
+    bounds: Rectangle,
+    point: Point,
+    scale: f32,
+    clip_area: Size,
+) -> (Rectangle, Rectangle) {
+    assert!(bounds.contains(point));
+    let clip_bounds = Rectangle {
+        x: point.x,
+        y: point.y,
+        width: clip_area.width,
+        height: clip_area.height,
+    };
+    let Point {
+        x: cursor_x,
+        y: cursor_y,
+    } = point;
+    let Rectangle {
+        x,
+        y,
+        width,
+        height,
+    } = bounds;
+    let left = (cursor_x - x) * scale;
+    let right = (x + width - cursor_x) * scale;
+    let top = (cursor_y - y) * scale;
+    let bottom = (y + height - cursor_y) * scale;
+    let bound_width = right + left;
+    let bound_height = top + bottom;
+    let magnifier_bounds = Rectangle {
+        x: cursor_x - left,
+        y: cursor_y - top,
+        width: bound_width,
+        height: bound_height,
+    };
+    (clip_bounds, magnifier_bounds)
+}
+
 fn crop(size: Size<u32>, region: Option<Rectangle<u32>>) -> Size<f32> {
     if let Some(region) = region {
         Size::new(
@@ -270,6 +308,7 @@ pub fn draw<Renderer, Handle>(
     content_fit: ContentFit,
     filter_method: FilterMethod,
     rotation: Rotation,
+    cursor_point: Option<Point>,
     opacity: f32,
     scale: f32,
 ) where
@@ -277,8 +316,9 @@ pub fn draw<Renderer, Handle>(
     Handle: Clone,
 {
     let bounds = layout.bounds();
-    let drawing_bounds =
+    let drawing_bounds_bottom =
         drawing_bounds(renderer, bounds, handle, crop, content_fit, rotation, scale);
+
     renderer.with_layer(bounds, |renderer| {
         renderer.fill_quad(
             renderer::Quad {
@@ -288,6 +328,35 @@ pub fn draw<Renderer, Handle>(
             iced_core::color!(0x777777, 0.5),
         )
     });
+
+    if let Some(point) = cursor_point
+        && drawing_bounds_bottom.contains(point)
+    {
+        let (clip_bounds, magnifier_bounds) = crop_bounds(
+            drawing_bounds_bottom,
+            point,
+            4.,
+            Size {
+                width: 100.,
+                height: 100.,
+            },
+        );
+        renderer.with_layer(drawing_bounds_bottom, |renderer| {
+            renderer.draw_image(
+                image::Image {
+                    handle: handle.clone(),
+                    border_radius,
+                    filter_method,
+                    rotation: rotation.radians(),
+                    opacity,
+                    snap: false,
+                },
+                magnifier_bounds,
+                clip_bounds,
+            )
+        });
+    }
+
     renderer.draw_image(
         image::Image {
             handle: handle.clone(),
@@ -297,7 +366,7 @@ pub fn draw<Renderer, Handle>(
             opacity,
             snap: false,
         },
-        drawing_bounds,
+        drawing_bounds_bottom,
         bounds,
     );
 }
@@ -333,6 +402,26 @@ where
         )
     }
 
+    fn update(
+        &mut self,
+        _tree: &mut Tree,
+        event: &iced_core::Event,
+        _layout: Layout<'_>,
+        _cursor: mouse::Cursor,
+        _renderer: &Renderer,
+        _clipboard: &mut dyn iced_core::Clipboard,
+        shell: &mut iced_core::Shell<'_, Message>,
+        _viewport: &Rectangle,
+    ) {
+        if matches!(
+            event,
+            iced_core::Event::Mouse(mouse::Event::CursorMoved { .. })
+                | iced_core::Event::Window(iced_core::window::Event::RedrawRequested(_))
+        ) {
+            shell.request_redraw();
+        }
+    }
+
     fn draw(
         &self,
         _tree: &Tree,
@@ -340,7 +429,7 @@ where
         _theme: &Theme,
         _style: &renderer::Style,
         layout: Layout<'_>,
-        _cursor: mouse::Cursor,
+        cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
         draw(
@@ -352,6 +441,7 @@ where
             self.content_fit,
             self.filter_method,
             self.rotation,
+            cursor.position(),
             self.opacity,
             self.scale,
         );

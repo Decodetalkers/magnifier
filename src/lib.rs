@@ -266,8 +266,8 @@ fn crop_bounds(
 ) -> (Rectangle, Rectangle) {
     assert!(bounds.contains(point));
     let clip_bounds = Rectangle {
-        x: point.x,
-        y: point.y,
+        x: point.x - clip_area.width / 2.,
+        y: point.y - clip_area.height / 2.,
         width: clip_area.width,
         height: clip_area.height,
     };
@@ -450,6 +450,31 @@ where
             self.magnifier_area,
             cursor.position(),
         );
+    }
+
+    fn mouse_interaction(
+        &self,
+        _tree: &Tree,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _viewport: &Rectangle,
+        renderer: &Renderer,
+    ) -> mouse::Interaction {
+        let bounds = layout.bounds();
+        let drawing_bounds_bottom = drawing_bounds(
+            renderer,
+            bounds,
+            &self.handle,
+            self.crop,
+            self.content_fit,
+            self.rotation,
+        );
+        if let Some(point) = cursor.position()
+            && drawing_bounds_bottom.contains(point)
+        {
+            return mouse::Interaction::Crosshair;
+        }
+        mouse::Interaction::default()
     }
 }
 

@@ -27,7 +27,7 @@ pub struct Magnifier<Handle = image::Handle> {
 }
 
 impl<Handle> Magnifier<Handle> {
-    /// Creates a new [`Image`] with the given path.
+    /// Creates a new [`Magnifier`] with the given path.
     pub fn new(handle: impl Into<Handle>) -> Self {
         Magnifier {
             handle: handle.into(),
@@ -48,19 +48,19 @@ impl<Handle> Magnifier<Handle> {
         }
     }
 
-    /// Sets the width of the [`Image`] boundaries.
+    /// Sets the width of the [`Magnifier`] boundaries.
     pub fn width(mut self, width: impl Into<Length>) -> Self {
         self.width = width.into();
         self
     }
 
-    /// Sets the height of the [`Image`] boundaries.
+    /// Sets the height of the [`Magnifier`] boundaries.
     pub fn height(mut self, height: impl Into<Length>) -> Self {
         self.height = height.into();
         self
     }
 
-    /// Sets whether the [`Image`] should try to fill as much space
+    /// Sets whether the [`Magnifier`] should try to fill as much space
     /// available as possible while keeping aspect ratio and without
     /// allocating extra space in any axis with a [`Length::Shrink`]
     /// sizing strategy.
@@ -73,7 +73,7 @@ impl<Handle> Magnifier<Handle> {
         self
     }
 
-    /// Sets the [`ContentFit`] of the [`Image`].
+    /// Sets the [`ContentFit`] of the [`Magnifier`].
     ///
     /// Defaults to [`ContentFit::Contain`]
     pub fn content_fit(mut self, content_fit: ContentFit) -> Self {
@@ -81,19 +81,19 @@ impl<Handle> Magnifier<Handle> {
         self
     }
 
-    /// Sets the [`FilterMethod`] of the [`Image`].
+    /// Sets the [`FilterMethod`] of the [`Magnifier`].
     pub fn filter_method(mut self, filter_method: FilterMethod) -> Self {
         self.filter_method = filter_method;
         self
     }
 
-    /// Applies the given [`Rotation`] to the [`Image`].
+    /// Applies the given [`Rotation`] to the [`Magnifier`].
     pub fn rotation(mut self, rotation: impl Into<Rotation>) -> Self {
         self.rotation = rotation.into();
         self
     }
 
-    /// Sets the opacity of the [`Image`].
+    /// Sets the opacity of the [`Magnifier`].
     ///
     /// It should be in the [0.0, 1.0] range—`0.0` meaning completely transparent,
     /// and `1.0` meaning completely opaque.
@@ -102,20 +102,20 @@ impl<Handle> Magnifier<Handle> {
         self
     }
 
-    /// Sets the scale of the [`Image`].
+    /// Sets the scale of the [`Magnifier`].
     ///
-    /// The region of the [`Image`] drawn will be scaled from the center by the given scale factor.
+    /// The region of the [`Magnifier`] drawn will be scaled from the center by the given scale factor.
     /// This can be useful to create certain effects and animations, like smooth zoom in / out.
     pub fn scale(mut self, scale: impl Into<f32>) -> Self {
         self.scale = scale.into();
         self
     }
 
-    /// Crops the [`Image`] to the given region described by the [`Rectangle`] in absolute
+    /// Crops the [`Magnifier`] to the given region described by the [`Rectangle`] in absolute
     /// coordinates.
     ///
     /// Cropping is done before applying any transformation or [`ContentFit`]. In practice,
-    /// this means that cropping an [`Image`] with this method should produce the same result
+    /// this means that cropping an [`Magnifier`] with this method should produce the same result
     /// as cropping it externally (e.g. with an image editor) and creating a new [`Handle`]
     /// for the cropped version.
     ///
@@ -129,22 +129,25 @@ impl<Handle> Magnifier<Handle> {
         self
     }
 
-    /// Sets the [`border::Radius`] of the [`Image`].
+    /// Sets the [`border::Radius`] of the [`Magnifier`].
     ///
     /// Currently, it will only be applied around the rectangular bounding box
-    /// of the [`Image`].
+    /// of the [`Magnifier`].
     pub fn border_radius(mut self, border_radius: impl Into<border::Radius>) -> Self {
         self.border_radius = border_radius.into();
         self
     }
 
+    /// Set the [`Size`] of the [`Magnifier`]
+    ///
+    /// This will decide the size of the Magnifier window
     pub fn magnifier_bounds(mut self, magnifier_area: impl Into<Size>) -> Self {
         self.magnifier_area = magnifier_area.into();
         self
     }
 }
 
-/// Computes the layout of an [`Image`].
+/// Computes the layout of an [`Magnifier`].
 pub fn layout<Renderer, Handle>(
     renderer: &Renderer,
     limits: &layout::Limits,
@@ -307,7 +310,7 @@ fn crop(size: Size<u32>, region: Option<Rectangle<u32>>) -> Size<f32> {
     }
 }
 
-/// Draws an [`Image`]
+/// Draws an [`Magnifier`]
 pub fn draw<Renderer, Handle>(
     renderer: &mut Renderer,
     layout: Layout<'_>,

@@ -11,7 +11,13 @@ use iced_core::{
 
 pub use image::{FilterMethod, Handle};
 
-pub struct Magnifier<Handle = image::Handle> {
+#[derive(Debug, Clone)]
+pub struct ScreenShot {
+    pub bounds: Rectangle,
+    pub point: Point,
+}
+
+pub struct Magnifier<'a, Message, Handle = image::Handle> {
     handle: Handle,
     width: Length,
     height: Length,
@@ -25,9 +31,10 @@ pub struct Magnifier<Handle = image::Handle> {
     expand: bool,
     magnifier_area: Size,
     drawing_bounds_image: Rectangle,
+    on_selected: Option<Box<dyn Fn(ScreenShot) -> Message + 'a>>,
 }
 
-impl<Handle> Magnifier<Handle> {
+impl<'a, Message, Handle> Magnifier<'a, Message, Handle> {
     /// Creates a new [`Magnifier`] with the given path.
     pub fn new(handle: impl Into<Handle>) -> Self {
         Magnifier {
@@ -47,6 +54,7 @@ impl<Handle> Magnifier<Handle> {
                 height: 100.,
             },
             drawing_bounds_image: Rectangle::default(),
+            on_selected: None,
         }
     }
 
@@ -145,6 +153,14 @@ impl<Handle> Magnifier<Handle> {
     /// This will decide the size of the Magnifier window
     pub fn magnifier_bounds(mut self, magnifier_area: impl Into<Size>) -> Self {
         self.magnifier_area = magnifier_area.into();
+        self
+    }
+
+    pub fn on_selected<F>(mut self, on_selected: F) -> Self
+    where
+        F: 'a + Fn(ScreenShot) -> Message,
+    {
+        self.on_selected = Some(Box::new(on_selected));
         self
     }
 }
@@ -312,7 +328,8 @@ fn crop(size: Size<u32>, region: Option<Rectangle<u32>>) -> Size<f32> {
     }
 }
 
-impl<Message, Theme, Renderer, Handle> Widget<Message, Theme, Renderer> for Magnifier<Handle>
+impl<'a, Message, Theme, Renderer, Handle> Widget<Message, Theme, Renderer>
+    for Magnifier<'a, Message, Handle>
 where
     Renderer: image::Renderer<Handle = Handle>,
     Handle: Clone,
@@ -348,7 +365,7 @@ where
         _tree: &mut Tree,
         event: &iced_core::Event,
         layout: Layout<'_>,
-        _cursor: mouse::Cursor,
+        cursor: mouse::Cursor,
         renderer: &Renderer,
         _clipboard: &mut dyn iced_core::Clipboard,
         shell: &mut iced_core::Shell<'_, Message>,
@@ -368,6 +385,17 @@ where
                 | iced_core::Event::Window(iced_core::window::Event::RedrawRequested(_))
         ) {
             shell.request_redraw();
+        }
+        if let iced_core::Event::Mouse(mouse::Event::ButtonPressed(_)) = event
+            && let Some(on_selected) = &self.on_selected
+            && let Some(mut point) = cursor.position()
+            && self.drawing_bounds_image.contains(point)
+        {
+            let bounds = self.drawing_bounds_image;
+            point.x -= bounds.x;
+            point.y -= bounds.y;
+
+            shell.publish(on_selected(ScreenShot { bounds, point }));
         }
     }
 
@@ -459,13 +487,14 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer, Handle> From<Magnifier<Handle>>
+impl<'a, Message, Theme, Renderer, Handle> From<Magnifier<'a, Message, Handle>>
     for Element<'a, Message, Theme, Renderer>
 where
     Renderer: image::Renderer<Handle = Handle>,
     Handle: Clone + 'a,
+    Message: 'a,
 {
-    fn from(image: Magnifier<Handle>) -> Element<'a, Message, Theme, Renderer> {
-        Element::new(image)
+    fn from(image: Magnifier<'a, Message, Handle>) -> Self {
+        Self::new(image)
     }
 }

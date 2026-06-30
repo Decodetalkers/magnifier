@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use iced::widget::image::Handle;
 use iced::{Element, Length, Rectangle};
-use iced_layershell::reexport::{Anchor, Layer, NewLayerShellSettings};
+use iced_layershell::reexport::{Anchor, Layer, NewLayerShellSettings, OutputOption};
 use iced_layershell::{
     daemon,
     settings::{LayerShellSettings, Settings, StartMode},
@@ -98,6 +98,7 @@ impl ColorPicker {
                     exclusive_zone: Some(-1),
                     anchor: Anchor::all(),
                     layer: Layer::Top,
+                    output_option: OutputOption::Output(wl_output),
                     ..Default::default()
                 });
 

@@ -143,6 +143,7 @@ impl ColorPicker {
         Magnifier::new(handle)
             .width(Length::Fill)
             .height(Length::Fill)
+            .scale(3.)
             .on_selected(move |screenshot| Message::OnSelected { id, screenshot })
             .into()
     }

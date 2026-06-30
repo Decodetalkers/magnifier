@@ -12,4 +12,10 @@ iced_runtime = "0.14.0"
 log = "0.4.29"
 
 [dev-dependencies]
-iced = { version = "0.14", features = ["tokio", "image"]  }
+iced = { version = "0.14", features = ["tokio", "image"] }
+iced_layershell = "0.18.1"
+iced_runtime = "0.14.0"
+iced_wayland_subscriber = "0.18.1"
+libwayshot = "0.8.0"
+rs_image = { package = "image", version = "0.25.10" }
+wayland-client = "0.31.14"

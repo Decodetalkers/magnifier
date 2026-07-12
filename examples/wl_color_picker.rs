@@ -13,10 +13,8 @@ use magnifier::{Magnifier, ScreenShot};
 use rs_image::{GenericImageView, RgbaImage};
 use wayland_client::Connection;
 fn main() -> Result<(), iced_layershell::Error> {
-    println!("abc");
     let connection = Connection::connect_to_env().unwrap();
     let connection2 = connection.clone();
-    println!("def");
     daemon(
         move || ColorPicker::new(connection.clone()),
         "osd",
@@ -57,7 +55,6 @@ enum Message {
 
 impl ColorPicker {
     fn new(conn: Connection) -> Self {
-        println!("efthijk");
         let wayshot = libwayshot::WayshotConnection::from_connection(conn.clone()).unwrap();
         Self {
             conn,
@@ -67,7 +64,6 @@ impl ColorPicker {
         }
     }
     fn subscription(&self) -> iced::Subscription<Message> {
-        println!("subscription");
         iced::Subscription::batch(vec![
             iced_wayland_subscriber::listen(self.conn.clone()).map(Message::Wayland),
             iced::window::close_events().map(Message::WindowClose),
@@ -75,7 +71,6 @@ impl ColorPicker {
     }
 
     fn update(&mut self, message: Message) -> iced::Task<Message> {
-        println!("{message:?}");
         match message {
             Message::Wayland(WaylandEvent::OutputInsert(OutputInfo {
                 wl_output,
@@ -83,6 +78,7 @@ impl ColorPicker {
                 description,
                 transform,
                 physical_size,
+                logical_region,
                 ..
             })) => {
                 let output_info = ShotOutputInfo {
@@ -94,7 +90,18 @@ impl ColorPicker {
                         width: physical_size.width as u32,
                         height: physical_size.height as u32,
                     },
-                    logical_region: libwayshot::LogicalRegion::default(),
+                    logical_region: libwayshot::LogicalRegion {
+                        inner: libwayshot::region::Region {
+                            position: libwayshot::region::Position {
+                                x: logical_region.position.x,
+                                y: logical_region.position.y,
+                            },
+                            size: libwayshot::Size {
+                                width: logical_region.size.width as u32,
+                                height: logical_region.size.height as u32,
+                            },
+                        },
+                    },
                 };
                 let image = self
                     .wayshot

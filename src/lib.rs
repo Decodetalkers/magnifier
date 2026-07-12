@@ -465,16 +465,11 @@ where
         &self,
         _tree: &Tree,
         _layout: Layout<'_>,
-        cursor: mouse::Cursor,
+        _cursor: mouse::Cursor,
         _viewport: &Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
-        if let Some(point) = cursor.position()
-            && self.drawing_bounds_image.contains(point)
-        {
-            return mouse::Interaction::Crosshair;
-        }
-        mouse::Interaction::default()
+        mouse::Interaction::Crosshair
     }
 }
 

@@ -13,8 +13,10 @@ use magnifier::{Magnifier, ScreenShot};
 use rs_image::{GenericImageView, RgbaImage};
 use wayland_client::Connection;
 fn main() -> Result<(), iced_layershell::Error> {
+    println!("abc");
     let connection = Connection::connect_to_env().unwrap();
     let connection2 = connection.clone();
+    println!("def");
     daemon(
         move || ColorPicker::new(connection.clone()),
         "osd",
@@ -55,6 +57,7 @@ enum Message {
 
 impl ColorPicker {
     fn new(conn: Connection) -> Self {
+        println!("efthijk");
         let wayshot = libwayshot::WayshotConnection::from_connection(conn.clone()).unwrap();
         Self {
             conn,
@@ -64,6 +67,7 @@ impl ColorPicker {
         }
     }
     fn subscription(&self) -> iced::Subscription<Message> {
+        println!("subscription");
         iced::Subscription::batch(vec![
             iced_wayland_subscriber::listen(self.conn.clone()).map(Message::Wayland),
             iced::window::close_events().map(Message::WindowClose),
@@ -71,21 +75,24 @@ impl ColorPicker {
     }
 
     fn update(&mut self, message: Message) -> iced::Task<Message> {
+        println!("{message:?}");
         match message {
             Message::Wayland(WaylandEvent::OutputInsert(OutputInfo {
                 wl_output,
                 name,
                 description,
+                transform,
+                physical_size,
                 ..
             })) => {
                 let output_info = ShotOutputInfo {
                     wl_output: wl_output.clone(),
                     name,
                     description,
-                    transform: libwayshot::reexport::Transform::Normal,
+                    transform,
                     physical_size: libwayshot::Size {
-                        width: 0,
-                        height: 0,
+                        width: physical_size.width as u32,
+                        height: physical_size.height as u32,
                     },
                     logical_region: libwayshot::LogicalRegion::default(),
                 };
@@ -144,7 +151,7 @@ impl ColorPicker {
         Magnifier::new(handle)
             .width(Length::Fill)
             .height(Length::Fill)
-            .scale(3.)
+            .scale(3_f32)
             .on_selected(move |screenshot| Message::OnSelected { id, screenshot })
             .into()
     }

@@ -2,17 +2,17 @@ use std::collections::HashMap;
 
 use iced::widget::image::Handle;
 use iced::{Element, Length, Rectangle};
-use iced_layershell::reexport::{Anchor, Layer, NewLayerShellSettings, OutputOption};
-use iced_layershell::{
+use iced_exwlshell::reexport::{Anchor, Layer, NewLayerShellSettings, OutputOption};
+use iced_exwlshell::{
     daemon,
-    settings::{LayerShellSettings, Settings, StartMode},
+    settings::{ExWlSettings, LayerShellSettings, StartMode},
 };
 use iced_wayland_subscriber::{OutputInfo, WaylandEvent};
 use libwayshot::OutputInfo as ShotOutputInfo;
 use magnifier::{Magnifier, ScreenShot};
 use rs_image::{GenericImageView, RgbaImage};
 use wayland_client::Connection;
-fn main() -> Result<(), iced_layershell::Error> {
+fn main() -> Result<(), iced_exwlshell::Error> {
     let connection = Connection::connect_to_env().unwrap();
     let connection2 = connection.clone();
     daemon(
@@ -22,7 +22,7 @@ fn main() -> Result<(), iced_layershell::Error> {
         ColorPicker::view,
     )
     .subscription(ColorPicker::subscription)
-    .settings(Settings {
+    .wl_settings(ExWlSettings {
         layer_settings: LayerShellSettings {
             exclusive_zone: -1,
             anchor: Anchor::all(),
@@ -42,7 +42,7 @@ struct ColorPicker {
     handles: HashMap<iced::window::Id, Handle>,
 }
 
-#[iced_layershell::to_layer_message(multi)]
+#[iced_exwlshell::to_layer_message(multi)]
 #[derive(Debug)]
 enum Message {
     Wayland(WaylandEvent),

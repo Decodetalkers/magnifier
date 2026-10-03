@@ -464,12 +464,26 @@ where
     fn mouse_interaction(
         &self,
         _tree: &Tree,
-        _layout: Layout<'_>,
-        _cursor: mouse::Cursor,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
         _viewport: &Rectangle,
-        _renderer: &Renderer,
+        renderer: &Renderer,
     ) -> mouse::Interaction {
-        mouse::Interaction::Crosshair
+        let bounds = layout.bounds();
+        let drawing_bounds_bottom = drawing_bounds(
+            renderer,
+            bounds,
+            &self.handle,
+            self.crop,
+            self.content_fit,
+            self.rotation,
+        );
+        if let Some(point) = cursor.position()
+            && drawing_bounds_bottom.contains(point)
+        {
+            return mouse::Interaction::Crosshair;
+        }
+        mouse::Interaction::None
     }
 }
 

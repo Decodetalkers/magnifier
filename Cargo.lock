@@ -1081,8 +1081,7 @@ dependencies = [
 [[package]]
 name = "exwlshellev"
 version = "0.21.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaa4a00f6824707575b8147b6e52c7557d98a6bc51d6c8dca9afa422e9d1d8c3"
+source = "git+https://github.com/waycrate/exwlshelleventloop.git#427b561d8f1a3919959dc3a7e47d9429679ee2a9"
 dependencies = [
  "calloop 0.14.4",
  "calloop-wayland-source 0.4.1",
@@ -1630,8 +1629,7 @@ dependencies = [
 [[package]]
 name = "iced_exdevtools"
 version = "0.21.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4c93f896cfeadc9bad1b9b8ce64e5301b57a630958ae1ad335392bb6593b489"
+source = "git+https://github.com/waycrate/exwlshelleventloop.git#427b561d8f1a3919959dc3a7e47d9429679ee2a9"
 dependencies = [
  "iced_debug",
  "iced_devtools",
@@ -1644,8 +1642,7 @@ dependencies = [
 [[package]]
 name = "iced_exwlshell"
 version = "0.21.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37e9266f0bff424fdc07495696cd9807e0ad3a048fada33226607618721ce39f"
+source = "git+https://github.com/waycrate/exwlshelleventloop.git#427b561d8f1a3919959dc3a7e47d9429679ee2a9"
 dependencies = [
  "enumflags2",
  "exwlshellev",
@@ -1660,7 +1657,7 @@ dependencies = [
  "iced_program",
  "iced_renderer",
  "iced_runtime",
- "iced_wayland_subscriber 0.21.0-rc1",
+ "iced_wayland_subscriber",
  "log",
  "mundy",
  "thiserror 2.0.21",
@@ -1671,8 +1668,7 @@ dependencies = [
 [[package]]
 name = "iced_exwlshell_macros"
 version = "0.21.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28c7ff620c611fda6e6c8a59cef8ed0b4fec6824cae349dafc8b38d5e2a02e5a"
+source = "git+https://github.com/waycrate/exwlshelleventloop.git#427b561d8f1a3919959dc3a7e47d9429679ee2a9"
 dependencies = [
  "darling",
  "manyhow",
@@ -1772,23 +1768,10 @@ dependencies = [
 
 [[package]]
 name = "iced_wayland_subscriber"
-version = "0.19.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a60e1abe38d167591d75ead3651ff6a93f1c85059f31d486a929611c0e2c8db"
-dependencies = [
- "futures",
- "iced",
- "thiserror 2.0.21",
- "wayland-client",
- "wayland-protocols",
-]
-
-[[package]]
-name = "iced_wayland_subscriber"
 version = "0.21.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c512f4d9f6cc77d181003172deb9673b10896a7173869b96bc9724289e85c562"
+source = "git+https://github.com/waycrate/exwlshelleventloop.git#427b561d8f1a3919959dc3a7e47d9429679ee2a9"
 dependencies = [
+ "exwlshellev",
  "futures",
  "iced_core",
  "iced_futures",
@@ -2312,7 +2295,7 @@ dependencies = [
  "iced_futures",
  "iced_renderer",
  "iced_runtime",
- "iced_wayland_subscriber 0.19.1",
+ "iced_wayland_subscriber",
  "iced_widget",
  "image",
  "libwayshot",
@@ -4400,8 +4383,7 @@ dependencies = [
 [[package]]
 name = "waycrate_xkbkeycode"
 version = "0.21.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8df91fe022c74ca9cca153a865b06fd92a35f5055b4be07b03c79aaab81a54d1"
+source = "git+https://github.com/waycrate/exwlshelleventloop.git#427b561d8f1a3919959dc3a7e47d9429679ee2a9"
 dependencies = [
  "calloop 0.14.4",
  "log",

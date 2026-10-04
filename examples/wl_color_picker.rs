@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use iced::widget::image::Handle;
 use iced::{Element, Length, Rectangle};
 use iced_exwlshell::reexport::{Anchor, Layer, NewLayerShellSettings, OutputOption};
+use iced_exwlshell::shell::ShellReceiver;
 use iced_exwlshell::{
     daemon,
     settings::{ExWlSettings, LayerShellSettings, StartMode},
 };
-use iced_wayland_subscriber::{OutputInfo, WaylandEvent};
+use iced_wayland_subscriber::{ExWlOutputInfo, shell::ShellEvent};
 use libwayshot::OutputInfo as ShotOutputInfo;
 use magnifier::{Magnifier, ScreenShot};
 use rs_image::{GenericImageView, RgbaImage};
@@ -15,8 +16,9 @@ use wayland_client::Connection;
 fn main() -> Result<(), iced_exwlshell::Error> {
     let connection = Connection::connect_to_env().unwrap();
     let connection2 = connection.clone();
+    let (shell_broadcast, shell_events) = iced_wayland_subscriber::shell::channel();
     daemon(
-        move || ColorPicker::new(connection.clone()),
+        move || ColorPicker::new(shell_events.clone(), connection.clone()),
         "osd",
         ColorPicker::update,
         ColorPicker::view,
@@ -29,6 +31,7 @@ fn main() -> Result<(), iced_exwlshell::Error> {
             start_mode: StartMode::Background,
             ..Default::default()
         },
+        shell_broadcast,
         with_connection: Some(connection2.into()),
         ..Default::default()
     })
@@ -36,16 +39,23 @@ fn main() -> Result<(), iced_exwlshell::Error> {
 }
 
 struct ColorPicker {
-    conn: Connection,
+    shell_events: ShellReceiver,
     wayshot: libwayshot::WayshotConnection,
     images: HashMap<iced::window::Id, RgbaImage>,
     handles: HashMap<iced::window::Id, Handle>,
 }
 
+#[derive(Debug, Clone)]
+// `OutputInfo` wraps sctk's, which is large.
+#[allow(clippy::large_enum_variant)]
+enum WayEvent {
+    OutputInsert(ExWlOutputInfo),
+}
+
 #[iced_exwlshell::to_layer_message(multi)]
 #[derive(Debug)]
 enum Message {
-    Wayland(WaylandEvent),
+    Wayland(WayEvent),
     WindowClose(iced::window::Id),
     OnSelected {
         id: iced::window::Id,
@@ -54,54 +64,42 @@ enum Message {
 }
 
 impl ColorPicker {
-    fn new(conn: Connection) -> Self {
+    fn new(shell_events: ShellReceiver, conn: Connection) -> Self {
         let wayshot = libwayshot::WayshotConnection::from_connection(conn.clone()).unwrap();
         Self {
-            conn,
             wayshot,
+            shell_events,
             images: HashMap::new(),
             handles: HashMap::new(),
         }
     }
     fn subscription(&self) -> iced::Subscription<Message> {
         iced::Subscription::batch(vec![
-            iced_wayland_subscriber::listen(self.conn.clone()).map(Message::Wayland),
+            self.shell_events.listen().filter_map(|event| match event {
+                ShellEvent::OutputAdded(output) => {
+                    Some(Message::Wayland(WayEvent::OutputInsert(output)))
+                }
+                _ => None,
+            }),
             iced::window::close_events().map(Message::WindowClose),
         ])
     }
 
     fn update(&mut self, message: Message) -> iced::Task<Message> {
         match message {
-            Message::Wayland(WaylandEvent::OutputInsert(OutputInfo {
-                wl_output,
-                name,
-                description,
-                transform,
-                physical_size,
-                logical_region,
-                ..
-            })) => {
+            Message::Wayland(WayEvent::OutputInsert(output)) => {
+                let (width, height) = output.physical_size;
+                let wl_output = output.wl_output();
                 let output_info = ShotOutputInfo {
                     wl_output: wl_output.clone(),
-                    name,
-                    description,
-                    transform,
+                    name: output.name.clone().unwrap_or_default(),
+                    description: output.description.clone().unwrap_or_default(),
+                    transform: output.transform,
                     physical_size: libwayshot::Size {
-                        width: physical_size.width as u32,
-                        height: physical_size.height as u32,
+                        width: width as u32,
+                        height: height as u32,
                     },
-                    logical_region: libwayshot::LogicalRegion {
-                        inner: libwayshot::region::Region {
-                            position: libwayshot::region::Position {
-                                x: logical_region.position.x,
-                                y: logical_region.position.y,
-                            },
-                            size: libwayshot::Size {
-                                width: logical_region.size.width as u32,
-                                height: logical_region.size.height as u32,
-                            },
-                        },
-                    },
+                    logical_region: libwayshot::LogicalRegion::default(),
                 };
                 let image = self
                     .wayshot

@@ -13,9 +13,9 @@ log = "0.4.33"
 
 [dev-dependencies]
 iced = { version = "0.14", features = ["tokio", "image"] }
-iced_exwlshell = "0.21.0-rc1"
+iced_exwlshell = { git = "https://github.com/waycrate/exwlshelleventloop.git" }
 iced_runtime = "0.14.0"
-iced_wayland_subscriber = "0.19.1"
+iced_wayland_subscriber = { git = "https://github.com/waycrate/exwlshelleventloop.git" }
 libwayshot = "0.9.0"
 rs_image = { package = "image", version = "0.25.10" }
 wayland-client = "0.31.14"

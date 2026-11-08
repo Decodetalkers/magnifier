@@ -9,7 +9,7 @@ use iced_exwlshell::{
     settings::{ExWlSettings, LayerShellSettings, StartMode},
 };
 use iced_wayland_subscriber::{ExWlOutputInfo, shell::ShellEvent};
-use libwayshot::OutputInfo as ShotOutputInfo;
+use libwayshot::output::SingleOutputInfo;
 use magnifier::{Magnifier, ScreenShot};
 use rs_image::{GenericImageView, RgbaImage};
 use wayland_client::Connection;
@@ -88,19 +88,9 @@ impl ColorPicker {
     fn update(&mut self, message: Message) -> iced::Task<Message> {
         match message {
             Message::Wayland(WayEvent::OutputInsert(output)) => {
-                let (width, height) = output.physical_size;
                 let wl_output = output.wl_output();
-                let output_info = ShotOutputInfo {
-                    wl_output: wl_output.clone(),
-                    name: output.name.clone().unwrap_or_default(),
-                    description: output.description.clone().unwrap_or_default(),
-                    transform: output.transform,
-                    physical_size: libwayshot::Size {
-                        width: width as u32,
-                        height: height as u32,
-                    },
-                    logical_region: libwayshot::LogicalRegion::default(),
-                };
+                let output_info =
+                    SingleOutputInfo::new(wl_output.clone()).transform(output.transform);
                 let image = self
                     .wayshot
                     .screenshot_single_output(&output_info, false)
